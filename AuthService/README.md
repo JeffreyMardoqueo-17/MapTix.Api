@@ -63,3 +63,6 @@ Company ───< User ───< RefreshToken
              ├──< UserSession
              │
              └──> Role ───< Permission (opcional)
+
+# Orden de creacion de cada cosa
+Modelos → DbContext → DTOs → Interfaces → Services → Controllers → Middleware
