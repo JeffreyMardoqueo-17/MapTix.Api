@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using AuthService.Models;
 using AuthService.helpers;
 
-namespace AuthService.Services
+namespace AuthService.Repositories
 {
     
     public interface ICompanyService
