@@ -8,6 +8,7 @@ using AuthService.Repositories;
 using AuthService.DataBase;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using AuthService.Helpers;
 
 namespace AuthService.Services
 {
@@ -59,12 +60,17 @@ namespace AuthService.Services
                 _logger.LogWarning("Errores de validación al crear compañía: {Message}", message);
                 return Result<Company>.Fail(message);
             }
-            
+
             // Normalizar TELEFONO
-            company.PhoneNumber = company.PhoneNumber.Replace(" ", "")
-                                                    .Replace("-", "")
-                                                    .Replace("(", "")
-                                                    .Replace(")", "");
+            if (!string.IsNullOrWhiteSpace(company.PhoneNumber))
+            {
+                company.PhoneNumber = company.PhoneNumber.Replace(" ", "")
+                                                        .Replace("-", "")
+                                                        .Replace("(", "")
+                                                        .Replace(")", "");
+            }
+            else
+                company.PhoneNumber = null;
 
             // Validar negocio: empresa duplicada
             if (await _context.Company.AnyAsync(c => c.Name == company.Name))
@@ -78,6 +84,58 @@ namespace AuthService.Services
             await _context.SaveChangesAsync();
 
             return Result<Company>.Ok(company);
+        }
+        //modificar compañia
+        public async Task<Result<Company>> UpdateCompanyAsync(Guid id, Company company)
+        {
+            var existingCompany = await _context.Company.FindAsync(company.Id);
+            if (existingCompany == null)
+            {
+                _logger.LogWarning($"Compañia con ID {company.Id} no encontrada para actualización.");
+                return Result<Company>.Fail("Company not found.");
+            }
+
+            var validationErrors = CompanyValidator.Validate(company);
+            if (validationErrors.Any())
+            {
+                var message = string.Join("; ", validationErrors);
+                _logger.LogWarning("Errores de validación al actualizar compañía: {Message}", message);
+                return Result<Company>.Fail(message);
+            }
+            if (!string.IsNullOrWhiteSpace(company.PhoneNumber))
+            {
+                company.PhoneNumber = company.PhoneNumber.Replace(" ", "")
+                                                        .Replace("-", "")
+                                                        .Replace("(", "")
+                                                        .Replace(")", "");
+            }
+            else
+                company.PhoneNumber = null;
+
+            existingCompany.Name = company.Name;
+            existingCompany.Address = company.Address;
+            existingCompany.PhoneNumber = company.PhoneNumber;
+            existingCompany.UpdatedAt = DateTime.UtcNow;
+
+            _context.Company.Update(existingCompany);
+            await _context.SaveChangesAsync();
+
+            return Result<Company>.Ok(existingCompany);
+        }
+
+        //eliminar compañia
+        public async Task<Result<bool>> DeleteCompanyAsync(Guid id)
+        {
+            var companyResult = await GetCompanyByIdAsync(id);
+            if (!companyResult.Success)
+                return Result<bool>.Fail(companyResult.Message!);
+
+            // Reatach entity (porque GetCompanyByIdAsync usa AsNoTracking)
+            _context.Company.Attach(companyResult.Data!);
+            _context.Company.Remove(companyResult.Data!);
+            await _context.SaveChangesAsync();
+
+            return Result<bool>.Ok(true);
         }
 
     }
