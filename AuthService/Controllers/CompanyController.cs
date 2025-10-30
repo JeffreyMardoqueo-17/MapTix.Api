@@ -26,10 +26,8 @@ namespace AuthService.Controllers
         public async Task<ActionResult<IEnumerable<CompanyReadDto>>> GetAllCompanies()
         {
             var result = await _companyService.GetAllCompaniesAsync();
-
             if (!result.Success)
                 return NotFound(result.Message);
-
             var companiesDto = _mapper.Map<IEnumerable<CompanyReadDto>>(result.Data);
             return Ok(companiesDto);
         }
@@ -38,10 +36,8 @@ namespace AuthService.Controllers
         public async Task<ActionResult<CompanyReadDto>> GetCompanyById(Guid id)
         {
             var result = await _companyService.GetCompanyByIdAsync(id);
-
             if (!result.Success)
                 return NotFound(result.Message);
-
             var companyDto = _mapper.Map<CompanyReadDto>(result.Data);
             return Ok(companyDto);
         }
@@ -51,10 +47,8 @@ namespace AuthService.Controllers
         {
             var company = _mapper.Map<Company>(createDto);
             var result = await _companyService.CreateCompanyAsync(company);
-
             if (!result.Success)
                 return BadRequest(result.Message);
-
             var companyDto = _mapper.Map<CompanyReadDto>(result.Data);
             return CreatedAtAction(nameof(GetCompanyById), new { id = companyDto.Id }, companyDto);
         }
@@ -64,13 +58,10 @@ namespace AuthService.Controllers
         {
             if (id != updateDto.Id)
                 return BadRequest("ID mismatch.");
-
             var company = _mapper.Map<Company>(updateDto);
             var result = await _companyService.UpdateCompanyAsync(updateDto.Id, company);
-
             if (!result.Success)
                 return BadRequest(result.Message);
-
             var companyDto = _mapper.Map<CompanyReadDto>(result.Data);
             return Ok(companyDto);
         }
@@ -79,10 +70,8 @@ namespace AuthService.Controllers
         public async Task<ActionResult> DeleteCompany(Guid id)
         {
             var result = await _companyService.DeleteCompanyAsync(id);
-
             if (!result.Success)
                 return NotFound(result.Message);
-
             return NoContent();
         }
     }
