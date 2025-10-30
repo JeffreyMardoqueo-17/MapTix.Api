@@ -15,6 +15,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 //Registro de AutoMapper
 builder.Services.AddAutoMapper(typeof(AutoMapperCompany));
+builder.Services.AddAutoMapper(typeof(AutoMapperRole));
 
 builder.Services.AddControllers();
 
