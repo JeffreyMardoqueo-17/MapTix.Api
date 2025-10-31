@@ -25,6 +25,7 @@ builder.Services.AddControllers();
 builder.Services.AddControllers();
 // Registrar servicios
 builder.Services.AddScoped<ICompanyService, CompanyService>();
+builder.Services.AddScoped<IRoleService, RoleService>();
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();

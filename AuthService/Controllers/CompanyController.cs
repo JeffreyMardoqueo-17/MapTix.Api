@@ -56,10 +56,10 @@ namespace AuthService.Controllers
         [HttpPut("{id:guid}")]
         public async Task<ActionResult<CompanyReadDto>> UpdateCompany(Guid id, [FromBody] CompanyUpdateDto updateDto)
         {
-            if (id != updateDto.Id)
-                return BadRequest("ID mismatch.");
+            if (id == Guid.Empty)
+                return BadRequest("Invalid ID.");
             var company = _mapper.Map<Company>(updateDto);
-            var result = await _companyService.UpdateCompanyAsync(updateDto.Id, company);
+            var result = await _companyService.UpdateCompanyAsync(id, company);
             if (!result.Success)
                 return BadRequest(result.Message);
             var companyDto = _mapper.Map<CompanyReadDto>(result.Data);

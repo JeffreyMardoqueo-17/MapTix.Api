@@ -13,7 +13,7 @@ using AuthService.Models.DTOs.Role;
 
 namespace AuthService.Controllers
 {
-    [Route("[controller]")]
+    [Route("api/[controller]")]
     public class RoleController : Controller
     {
         private readonly IRoleService _roleService;
@@ -26,17 +26,17 @@ namespace AuthService.Controllers
         }
         //Get : api/company
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<CompanyReadDto>>> GetAllRolesAsync()
+        public async Task<ActionResult<IEnumerable<RoleReadDTO>>> GetAllRolesAsync()
         {
             var result = await _roleService.GetAllRolesAsync();
             if (!result.Success)
                 return NotFound(result.Message);
-            var rolesDTO = _mapper.Map<IEnumerable<CompanyReadDto>>(result.Data);
+            var rolesDTO = _mapper.Map<IEnumerable<RoleReadDTO>>(result.Data);
             return Ok(rolesDTO);
         }
         // GET: api/company/{id}
         [HttpGet("{id:guid}")]
-        public async Task<ActionResult<CompanyReadDto>> GetRoleByIdAsync(Guid id)
+        public async Task<ActionResult<RoleReadDTO>> GetRoleByIdAsync(Guid id)
         {
             var role = await _roleService.GetRoleByIdAsync(id);
             if (!role.Success)
@@ -46,14 +46,15 @@ namespace AuthService.Controllers
         }
         // POST: api/company
         [HttpPost]
-        public async Task<ActionResult<CompanyReadDto>> CreateRoleAync([FromBody] CompanyCreateDto createDto)
+        public async Task<ActionResult<CompanyReadDto>> CreateRoleAync([FromBody] RoleCreateDTO createDto)
         {
             var role = _mapper.Map<Role>(createDto);
             var result = await _roleService.CreateRoleAsync(role);
             if (!result.Success)
                 return BadRequest(result.Message);
             var roleDTO = _mapper.Map<RoleReadDTO>(result.Data);
-            return CreatedAtAction(nameof(GetRoleByIdAsync), new { id = roleDTO.Id }, roleDTO);
+            // return CreatedAtAction(nameof(GetRoleByIdAsync), new { id = roleDTO.Id }, roleDTO);
+            return Ok(roleDTO);
         }
         // PUT: api/company/{id}
         [HttpPut("{id:guid}")]
@@ -62,8 +63,10 @@ namespace AuthService.Controllers
             if (updateDto is null)
                 return BadRequest("Invalid data.");
 
-            if (id != updateDto.id)
-                return BadRequest("ID mismatch.");
+            // if (id)
+            //     return BadRequest("ID mismatch.");
+            if (id == Guid.Empty)
+                return BadRequest("Invalid ID.");
 
             var result = await _roleService.UpdateRoleAsync(_mapper.Map<Role>(updateDto));
 
@@ -81,6 +84,6 @@ namespace AuthService.Controllers
                 return NotFound(result.Message);
             return NoContent();
         }
-        
+
     }
 }
