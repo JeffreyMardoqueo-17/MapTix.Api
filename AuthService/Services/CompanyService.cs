@@ -25,6 +25,7 @@ namespace AuthService.Services
         public async Task<Result<IEnumerable<Company>>> GetAllCompaniesAsync()
         {
             var companies = await _context.Company
+                .Where(c => c.IsActive)
                 .AsNoTracking()
                 .ToListAsync();
             if (companies.Count == 0)
@@ -34,11 +35,25 @@ namespace AuthService.Services
             }
             return Result<IEnumerable<Company>>.Ok(companies);
         }
+        public async Task<Result<IEnumerable<Company>>> GetAllInactiveCompaniesAsync()
+        {
+            var companiesInactives = await _context.Company
+                .Where(c => !c.IsActive)
+                .AsNoTracking()
+                .ToListAsync();
+            if (companiesInactives.Count == 0)
+            {
+                _logger.LogWarning("No se encontraron compañias inactivas en la base de datos."); // Log warning
+                return Result<IEnumerable<Company>>.Fail("No inactive companies found.");// Retornar un resultado de fallo si no se encuentran compañias
+            }
+            return Result<IEnumerable<Company>>.Ok(companiesInactives);
+        }
 
         //obtener compañoas por id
         public async Task<Result<Company>> GetCompanyByIdAsync(Guid id)
         {
             var company = await _context.Company
+                // .Where(c => c.IsActive)
                 .AsNoTracking()
                 .FirstOrDefaultAsync(c => c.Id == id);
             if (company == null)
@@ -130,12 +145,36 @@ namespace AuthService.Services
             if (!companyResult.Success)
                 return Result<bool>.Fail(companyResult.Message!);
 
-            // Reatach entity (porque GetCompanyByIdAsync usa AsNoTracking)
-            _context.Company.Attach(companyResult.Data!);
-            _context.Company.Remove(companyResult.Data!);
+            var company = companyResult.Data!;
+            _context.Company.Attach(company);
+
+            // Marcar como inactiva
+            company.IsActive = false;
+            company.UpdatedAt = DateTime.UtcNow;
+
+            _context.Company.Update(company);
             await _context.SaveChangesAsync();
 
             return Result<bool>.Ok(true);
+        }
+        // Reactivar compañao
+        public async Task<Result<Company>> ActivateCompanyAsync(Guid id)
+        {
+            var company = await _context.Company.FirstOrDefaultAsync(c => c.Id == id);
+
+            if (company == null)
+                return Result<Company>.Fail("Company not found.");
+
+            if (company.IsActive)
+                return Result<Company>.Fail("Company is already active.");
+
+            company.IsActive = true;
+            company.UpdatedAt = DateTime.UtcNow;
+
+            _context.Company.Update(company);
+            await _context.SaveChangesAsync();
+
+            return Result<Company>.Ok(company);
         }
 
     }

@@ -31,6 +31,16 @@ namespace AuthService.Controllers
             var companiesDto = _mapper.Map<IEnumerable<CompanyReadDto>>(result.Data);
             return Ok(companiesDto);
         }
+        // GET: api/company/inactive
+        [HttpGet("inactive")]
+        public async Task<ActionResult<IEnumerable<CompanyReadDto>>> GetAllInactiveCompanies()
+        {
+            var result = await _companyService.GetAllInactiveCompaniesAsync();
+            if (!result.Success)
+                return NotFound(result.Message);
+            var companiesDto = _mapper.Map<IEnumerable<CompanyReadDto>>(result.Data);
+            return Ok(companiesDto);
+        }
         // GET: api/company/{id}
         [HttpGet("{id:guid}")]
         public async Task<ActionResult<CompanyReadDto>> GetCompanyById(Guid id)
@@ -73,6 +83,16 @@ namespace AuthService.Controllers
             if (!result.Success)
                 return NotFound(result.Message);
             return NoContent();
+        }
+        // PATCH: api/company/{id}/activate
+        [HttpPatch("{id:guid}/activate")]
+        public async Task<ActionResult<Company>> ActivateCompany(Guid id)
+        {
+            var result = await _companyService.ActivateCompanyAsync(id);
+            if (!result.Success)
+                return NotFound(result.Message);
+
+            return Ok(result.Data);
         }
     }
 }
