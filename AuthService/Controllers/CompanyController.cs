@@ -53,15 +53,28 @@ namespace AuthService.Controllers
         }
         // POST: api/company
         [HttpPost]
+        [HttpPost]
         public async Task<ActionResult<CompanyReadDto>> CreateCompany([FromBody] CompanyCreateDto createDto)
         {
             var company = _mapper.Map<Company>(createDto);
             var result = await _companyService.CreateCompanyAsync(company);
+
             if (!result.Success)
                 return BadRequest(result.Message);
+
+            if (result.Data == null)
+                return BadRequest(result.Message ?? "Company creation returned no data.");
+
+            //   acceso al Id recién creado
+            var companyId = result.Data.Id;
+
+            // Mapear a DTO de lectura para devolver la compañía completa
             var companyDto = _mapper.Map<CompanyReadDto>(result.Data);
+
+            //  Devolver la compañía creada
             return CreatedAtAction(nameof(GetCompanyById), new { id = companyDto.Id }, companyDto);
         }
+
         // PUT: api/company/{id}
         [HttpPut("{id:guid}")]
         public async Task<ActionResult<CompanyReadDto>> UpdateCompany(Guid id, [FromBody] CompanyUpdateDto updateDto)
