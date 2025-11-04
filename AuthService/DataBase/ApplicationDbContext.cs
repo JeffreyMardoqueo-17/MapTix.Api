@@ -30,6 +30,11 @@ namespace AuthService.DataBase
                 .WithMany()
                 .HasForeignKey(u => u.CompanyId)
                 .OnDelete(DeleteBehavior.Restrict);
+            //para user  => asegurar que el email sea unico
+            modelBuilder.Entity<User>()
+                .HasIndex(u => u.Email)
+                .IsUnique();
+
         }
 
     }

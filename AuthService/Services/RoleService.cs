@@ -77,6 +77,22 @@ namespace AuthService.Services
             }
             return Result<Role>.Ok(role);
         }
+        //obtener roles por nombre 
+        public async Task<Result<Role>> GetRoleByNameAsync(string roleName)
+        {
+            var role = await _context.Role
+                .AsNoTracking()
+                .FirstOrDefaultAsync(r => r.Name == roleName);
+
+            if (role == null)
+            {
+                _logger.LogWarning("Intento de obtener rol inexistente: {RoleName}", roleName);
+                return Result<Role>.Fail($"El rol '{roleName}' no está configurado.");
+            }
+
+            return Result<Role>.Ok(role);
+        }
+
         //crear Role
         public async Task<Result<Role>> CreateRoleAsync(Role role)
         {

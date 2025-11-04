@@ -11,6 +11,7 @@ namespace AuthService.Repositories
     {
         Task<Result<Role>> GetRoleByIdAsync(Guid id);
         Task<Result<IEnumerable<Role>>> GetAllRolesAsync();
+        Task<Result<Role>> GetRoleByNameAsync(string roleName); // nuevo metodo para obtener rol por nombre
         Task<Result<Role>> CreateRoleAsync(Role role);
         Task<Result<Role>> UpdateRoleAsync(Role role);
         Task<Result<bool>> DeleteRoleAsync(Guid id);

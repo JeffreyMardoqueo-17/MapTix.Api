@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using AuthService.helpers;
 using Microsoft.Extensions.Logging;
 using AuthService.Helpers;
+using AuthService.Repositories;
 
 namespace AuthService.Services
 {
@@ -14,12 +15,16 @@ namespace AuthService.Services
         private readonly ApplicationDbContext _context;
         private readonly ILogger<UserService> _logger;
         private readonly JwtHelper _jwtHelper;
+        private readonly CompanyService _companyService;
+        private readonly RoleService _roleService;
 
-        public UserService(ApplicationDbContext context, ILogger<UserService> logger, JwtHelper jwtHelper)
+        public UserService(ApplicationDbContext context, ILogger<UserService> logger, JwtHelper jwtHelper, CompanyService companyService, RoleService roleService)
         {
             _context = context;
             _logger = logger;
             _jwtHelper = jwtHelper;
+            _companyService = companyService;
+            _roleService = roleService;
         }
         /// <summary>
         /// 🟢 Registra un usuario administrador asociado a una empresa existente.
@@ -39,25 +44,19 @@ namespace AuthService.Services
         public async Task<(User user, string token)> RegisterCompanyAndAdminAsync(Company company, User adminUser)
         {
             // 🔍 Verificar que la empresa exista
-            var existingCompany = await _context.Company
-                .FirstOrDefaultAsync(c => c.Id == company.Id);
-
-            if (existingCompany == null)
-            {   
-                _logger.LogWarning("Intento de registrar admin para empresa inexistente: {CompanyId}", company.Id);
-                throw new InvalidOperationException("La empresa especificada no existe.");
-            }
-
-            // 🔍 Validar duplicado de correo
-            if (await _context.User.AnyAsync(u => u.Email == adminUser.Email))
+            var existingCompany = await _companyService.GetCompanyByIdAsync(company.Id);
+            if (existingCompany == null || existingCompany.Data == null)
             {
-                _logger.LogWarning("Intento de registrar admin con correo duplicado: {Email}", adminUser.Email);
-                throw new InvalidOperationException("Ya existe un usuario con ese correo.");
+                _logger.LogWarning("Intento de registrar admin para empresa inexistente: {CompanyId}", company.Id);
+                throw new InvalidOperationException("La empresa no existe.");
             }
 
-            // 🔍 Obtener rol AdminCompany
-            var adminRole = await _context.Role.FirstOrDefaultAsync(r => r.Name == "AdminCompany");
-            if (adminRole == null)
+            //  Validar correo unico
+            await UserValidationHelper.EnsureUserEmailIsUniqueAsync(_context, adminUser.Email, _logger);
+
+            //  Obtener rol AdminCompany
+            var adminRole = await _roleService.GetRoleByNameAsync("AdminCompany");
+            if (adminRole == null || adminRole.Data == null)
             {
                 _logger.LogError("El rol 'AdminCompany' no está configurado en la base de datos.");
                 throw new InvalidOperationException("El rol 'AdminCompany' no está configurado.");
@@ -67,8 +66,8 @@ namespace AuthService.Services
             {
                 // Crear usuario administrador 
                 adminUser.Id = Guid.NewGuid();
-                adminUser.CompanyId = existingCompany.Id;
-                adminUser.RoleId = adminRole.Id;
+                adminUser.CompanyId = existingCompany.Data.Id;
+                adminUser.RoleId = adminRole.Data.Id;
                 adminUser.IsActive = true;
                 adminUser.CreatedAt = DateTime.UtcNow;
 
@@ -81,7 +80,7 @@ namespace AuthService.Services
                 // 🔑 Generar JWT
                 var token = _jwtHelper.GenerateToken(adminUser);
 
-                _logger.LogInformation("Usuario administrador creado correctamente para empresa {CompanyId}", existingCompany.Id);
+                _logger.LogInformation("Usuario administrador creado correctamente para empresa {CompanyId}", existingCompany.Data.Id);
 
                 return (adminUser, token);
             }

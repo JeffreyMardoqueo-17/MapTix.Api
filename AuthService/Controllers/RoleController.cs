@@ -24,7 +24,7 @@ namespace AuthService.Controllers
             _roleService = roleService;
             _mapper = mapper;
         }
-        //Get : api/company
+        //Get : api/role
         [HttpGet]
         public async Task<ActionResult<IEnumerable<RoleReadDTO>>> GetAllRolesAsync()
         {
@@ -34,7 +34,7 @@ namespace AuthService.Controllers
             var rolesDTO = _mapper.Map<IEnumerable<RoleReadDTO>>(result.Data);
             return Ok(rolesDTO);
         }
-        // GET: api/company/{id}
+        // GET: api/role/{id}
         [HttpGet("{id:guid}")]
         public async Task<ActionResult<RoleReadDTO>> GetRoleByIdAsync(Guid id)
         {
@@ -44,9 +44,20 @@ namespace AuthService.Controllers
             var roleDTO = _mapper.Map<RoleReadDTO>(role.Data);
             return Ok(roleDTO);
         }
-        // POST: api/company
+        //get: api/role/{name}
+        [HttpGet("byname/{roleName}")]
+        public async Task<ActionResult<RoleReadDTO>> GetRoleByNameAsync(string roleName)
+        {
+            var role = await _roleService.GetRoleByNameAsync(roleName);
+            if (!role.Success)
+                return NotFound(role.Message);
+            var roleDTO = _mapper.Map<RoleReadDTO>(role.Data);
+            return Ok(roleDTO);
+        }
+         
+        // POST: api/role
         [HttpPost]
-        public async Task<ActionResult<CompanyReadDto>> CreateRoleAync([FromBody] RoleCreateDTO createDto)
+        public async Task<ActionResult<RoleReadDTO>> CreateRoleAsync([FromBody] RoleCreateDTO createDto)
         {
             var role = _mapper.Map<Role>(createDto);
             var result = await _roleService.CreateRoleAsync(role);
