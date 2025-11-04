@@ -53,7 +53,6 @@ namespace AuthService.Controllers
         }
         // POST: api/company
         [HttpPost]
-        [HttpPost]
         public async Task<ActionResult<CompanyReadDto>> CreateCompany([FromBody] CompanyCreateDto createDto)
         {
             var company = _mapper.Map<Company>(createDto);
