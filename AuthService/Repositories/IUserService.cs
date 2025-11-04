@@ -9,10 +9,23 @@ namespace AuthService.Repositories
 {
     public interface IUserService
     {
-        Task<Result<User>> GetUserByIdAsync(Guid id);
-        Task<Result<IEnumerable<User>>> GetAllUsersAsync();
-        Task<Result<User>> CreateUserAsync(User user);
-        Task<Result<User>> UpdateUserAsync(User user);
-        Task<Result<bool>> DeleteUserAsync(Guid id);
+        // Crea un usuario dentro de una company ya existente.
+        // Se espera que user.CompanyId esté asignado y que roleId sea el rol a asignar.
+        Task<User> CreateUserAsync(User user, Guid roleId); //aqui sera para crear usuarios internos 
+
+        // Onboarding público: crea Company + User admin en una única transacción,
+        // asignando automáticamente el rol AdminCompany al usuario y devolviendo JWT.
+        Task<(User user, string token)> RegisterCompanyAndAdminAsync(Company company, User adminUser);
+
+        // Autentica (login)
+        Task<User?> AuthenticateAsync(string email, string password);
+
+        // Genera JWT para un usuario ya cargado (incluye companyId y role)
+        Task<string> GenerateTokenAsync(User user);
+
+        // Buscar usuario por email
+        Task<User?> GetByEmailAsync(string email);
     }
+
+
 }
