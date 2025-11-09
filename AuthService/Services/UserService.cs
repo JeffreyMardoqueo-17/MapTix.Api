@@ -3,9 +3,9 @@ using System.Threading.Tasks;
 using AuthService.DataBase;
 using AuthService.Models;
 using Microsoft.EntityFrameworkCore;
-using AuthService.helpers;
-using Microsoft.Extensions.Logging;
 using AuthService.Helpers;
+using Microsoft.Extensions.Logging;
+using AuthService.helpers;
 using AuthService.Repositories;
 
 namespace AuthService.Services
@@ -41,7 +41,7 @@ namespace AuthService.Services
         /// - Registra el usuario en la base de datos.
         /// - Devuelve el usuario y un JWT válido por 8 horas.
         /// </remarks>
-        public async Task<(User user, string token)> RegisterCompanyAndAdminAsync(Company company, User adminUser)
+        public async Task<Result<(User user, string token)>> RegisterCompanyAndAdminAsync(Company company, User adminUser)
         {
             // 🔍 Verificar que la empresa exista
             var existingCompany = await _companyService.GetCompanyByIdAsync(company.Id);
@@ -71,23 +71,48 @@ namespace AuthService.Services
                 adminUser.IsActive = true;
                 adminUser.CreatedAt = DateTime.UtcNow;
 
-                // 🔐 Encriptar contraseña con Argon2id (usando helper)
+                //  Encriptar contraseña con Argon2id (usando helper)
                 adminUser.PasswordHash = EncryptHelper.HashPassword(adminUser.PasswordHash);
 
                 _context.User.Add(adminUser);
                 await _context.SaveChangesAsync();
 
-                // 🔑 Generar JWT
+                //  Generar JWT
                 var token = _jwtHelper.GenerateToken(adminUser);
 
                 _logger.LogInformation("Usuario administrador creado correctamente para empresa {CompanyId}", existingCompany.Data.Id);
 
-                return (adminUser, token);
+                return Result<(User user, string token)>.Ok((adminUser, token));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al crear usuario administrador para empresa {CompanyId}", company.Id);
                 throw;
+            }
+        }
+        public async Task<Result<User>> GetUserByIdAsync(Guid id)
+        {
+            try
+            {
+                var user = await _context.User
+                    .AsNoTracking()
+                    .Include(u => u.Role)        // Agregi la relacion a las demas tablas 
+                    .Include(u => u.Company)     // Agregi la relacion a las demas tablas 
+                    .FirstOrDefaultAsync(u => u.Id == id);
+
+                if (user == null)
+                {
+                    _logger.LogWarning("Usuario no encontrado: {UserId}", id);
+                    return Result<User>.Fail("Usuario no encontrado.");
+                }
+
+                _logger.LogInformation("Usuario encontrado correctamente: {UserId}", id);
+                return Result<User>.Ok(user);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener usuario por Id: {UserId}", id);
+                return Result<User>.Fail("Error al obtener el usuario.");
             }
         }
 

@@ -11,6 +11,10 @@ using AuthService.helpers; // 👈 Necesario para Encoding.UTF8
 
 var builder = WebApplication.CreateBuilder(args);
 
+
+//  Cargar los secrets de usuario
+builder.Configuration.AddUserSecrets<Program>();
+
 // Add services to the container.
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
@@ -18,35 +22,27 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
 
-// ✅ Corregido: usa builder.Configuration en lugar de 'configuration'
+// ✅ Configuración de autenticación con JwtBearer
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
    .AddJwtBearer(options =>
    {
-       options.TokenValidationParameters = new TokenValidationParameters
-       {
-           ValidateIssuer = true,
-           ValidateAudience = true,
-           ValidateLifetime = true,
-           ValidateIssuerSigningKey = true,
-           ValidIssuer = builder.Configuration["Jwt:Issuer"],
-           ValidAudience = builder.Configuration["Jwt:Audience"],
-           IssuerSigningKey = new SymmetricSecurityKey(
-               Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!)
-           )
-           ///FALTA ESTO EN APPSETTINGS.JSON:
-           /// {
-           ///   "Jwt": {
-           ///     "Key": "TuClaveSecretaDe32CaracteresOMas",
-           ///     "Issuer": "tuapp.com",
-           ///     "Audience": "tuapp.com"
-           ///   }
-           /// }
-       };
-   });
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!)
+            )
+    };
+    });
 
 builder.Services.AddAuthorization();
 builder.Services.AddScoped<JwtHelper>(); // Agregar JwtHelper como servicio
- 
+
 
 //Registro de AutoMapper
 builder.Services.AddAutoMapper(typeof(AutoMapperCompany));
